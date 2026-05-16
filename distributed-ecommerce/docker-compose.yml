@@ -1,0 +1,73 @@
+version: '3.8'
+
+# ─── Distributed E-Commerce System ───────────────────────────────────────────
+# CS-432 Distributed Computing - Term Project
+# Run: docker-compose up --build
+#
+# Services:
+#   user-service    → http://localhost:3001
+#   product-service → http://localhost:3002
+#   order-service   → http://localhost:3003
+#   payment-service → http://localhost:3004
+#
+# NOTE: Replace MONGO_URI with your MongoDB Atlas connection string
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      MONGO_URI: ${USER_MONGO_URI}
+      JWT_SECRET: dc432_distributed_secret
+    restart: unless-stopped
+    networks:
+      - ecommerce-network
+
+  product-service:
+    build: ./product-service
+    container_name: product-service
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      MONGO_URI: ${PRODUCT_MONGO_URI}
+    restart: unless-stopped
+    networks:
+      - ecommerce-network
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+    restart: unless-stopped
+    networks:
+      - ecommerce-network
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      MONGO_URI: ${ORDER_MONGO_URI}
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      PAYMENT_SERVICE_URL: http://payment-service:3004
+    depends_on:
+      - product-service
+      - payment-service
+    restart: unless-stopped
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge
